@@ -1,5 +1,5 @@
 """
-States module - exports all state definitions
+States module - exports all state definitions for Simplified Two-Agent System
 """
 
 import importlib.util
@@ -14,4 +14,12 @@ try:
 finally:
     sys.path.remove(_states_dir)
 
-__all__ = ['SimpleWorkflowState'] 
+# Import from weather.states directory
+_weather_states_dir = os.path.join(os.path.dirname(__file__), 'weather.states')
+sys.path.insert(0, _weather_states_dir)
+try:
+    from weather_state import WeatherState
+finally:
+    sys.path.remove(_weather_states_dir)
+
+__all__ = ['SimpleWorkflowState', 'WeatherState'] 

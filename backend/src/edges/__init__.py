@@ -1,5 +1,5 @@
 """
-Edges module - exports all edge definitions
+Edges module - exports all edge definitions for Simplified Two-Agent System
 """
 
 import importlib.util
@@ -10,7 +10,7 @@ import sys
 _orchestrator_edges_dir = os.path.join(os.path.dirname(__file__), 'orchestrator.edges')
 sys.path.insert(0, _orchestrator_edges_dir)
 try:
-    from workflow_edges import create_workflow_edges
+    from workflow_edges import create_workflow_edges, create_simplified_workflow_edges, create_legacy_workflow_edges
 finally:
     sys.path.remove(_orchestrator_edges_dir)
 
@@ -18,16 +18,23 @@ finally:
 _slack_edges_dir = os.path.join(os.path.dirname(__file__), 'slack.edges')
 sys.path.insert(0, _slack_edges_dir)
 try:
-    from slack_workflow_edges import create_slack_workflow_edges
+    from slack_workflow_edges import create_slack_workflow_edges, create_enhanced_slack_workflow_edges
 finally:
     sys.path.remove(_slack_edges_dir)
 
-# Import from google_meet.edges directory
-_google_meet_edges_dir = os.path.join(os.path.dirname(__file__), 'google_meet.edges')
-sys.path.insert(0, _google_meet_edges_dir)
+# Import from weather.edges directory
+_weather_edges_dir = os.path.join(os.path.dirname(__file__), 'weather.edges')
+sys.path.insert(0, _weather_edges_dir)
 try:
-    from google_meet_workflow_edges import create_google_meet_workflow_edges
+    from weather_workflow_edges import create_enhanced_weather_workflow_edges
 finally:
-    sys.path.remove(_google_meet_edges_dir)
+    sys.path.remove(_weather_edges_dir)
 
-__all__ = ['create_workflow_edges', 'create_slack_workflow_edges', 'create_google_meet_workflow_edges'] 
+__all__ = [
+    'create_workflow_edges', 
+    'create_simplified_workflow_edges',
+    'create_legacy_workflow_edges',
+    'create_slack_workflow_edges',
+    'create_enhanced_slack_workflow_edges',
+    'create_enhanced_weather_workflow_edges'
+] 

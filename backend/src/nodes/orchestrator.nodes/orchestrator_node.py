@@ -1,44 +1,42 @@
 """
-Orchestrator Node - Main orchestrator node with tool capabilities
+Simplified Orchestrator Node - LLM-driven agent selection for two-agent architecture
+Focuses on Slack and Weather agents with intelligent routing
 """
 
 from langchain_core.messages import SystemMessage
 
 def create_orchestrator_node(llm_with_tools):
-    """Create the main orchestrator node"""
+    """Create the simplified orchestrator node for two-agent architecture"""
     
-    # Simple but intelligent system prompt
-    SYSTEM_PROMPT = """You are a V2 orchestrator that executes agents using tools. 
+    # Enhanced system prompt for two-agent selection
+    SIMPLIFIED_SYSTEM_PROMPT = """You are an intelligent task orchestrator with access to two specialized agents:
 
 🔧 AVAILABLE TOOLS:
-- execute_math_agent: For math/arithmetic questions
-- execute_weather_agent: For weather questions
-- execute_slack_agent: For sending messages to Slack channels
-- execute_google_meet_agent: For scheduling Google Meet meetings and calendar operations
+- invoke_slack_agent: For Slack messaging, reading messages, channel management, and communication tasks
+- invoke_weather_agent: For weather information, forecasts, climate data, and weather-related queries
 
 🎯 YOUR JOB:
-1. Analyze the user's question
-2. Use the appropriate tool to execute the right agent
-3. For complex questions, you can use multiple tools in sequence
-4. Pass context between tools when needed
+Analyze the user's request and automatically select the appropriate agent tool based on intent.
+You do NOT need keyword matching or pattern recognition - use natural language understanding.
 
 EXAMPLES:
-- "Add 5 and 10" → Use execute_math_agent
-- "Weather in London?" → Use execute_weather_agent  
-- "Send 'Hello team' to general channel" → Use execute_slack_agent
-- "Schedule a team meeting for tomorrow at 2 PM" → Use execute_google_meet_agent
-- "Create a Google Meet call for Friday at 10 AM" → Use execute_google_meet_agent
+- "Send hello to team channel" → invoke_slack_agent
+- "What channels are available in Slack?" → invoke_slack_agent  
+- "Read recent messages from development channel" → invoke_slack_agent
+- "Weather in London?" → invoke_weather_agent
+- "Give me a 5-day forecast for Tokyo" → invoke_weather_agent
+- "Compare weather between NYC and LA" → invoke_weather_agent
 
-Be smart about using tools and passing context!"""
+Let your LLM intelligence guide tool selection naturally. Choose the most appropriate agent for the user's intent."""
 
-    def orchestrator_with_tools(state):
-        """Main orchestrator node with tool capabilities"""
+    def simplified_orchestrator_with_tools(state):
+        """Simplified orchestrator node with enhanced LLM decision making"""
         messages = state["messages"].copy()
         
-        # Add system prompt
+        # Add enhanced system prompt
         has_system = any(getattr(msg, 'type', None) == 'system' for msg in messages)
         if not has_system:
-            system_msg = SystemMessage(content=SYSTEM_PROMPT)
+            system_msg = SystemMessage(content=SIMPLIFIED_SYSTEM_PROMPT)
             messages = [system_msg] + messages
         
         # Add context from previous agent results if available
@@ -50,4 +48,9 @@ Be smart about using tools and passing context!"""
         response = llm_with_tools.invoke(messages)
         return {"messages": [response]}
     
-    return orchestrator_with_tools 
+    return simplified_orchestrator_with_tools
+
+# Keep backward compatibility with original function name
+def create_simplified_orchestrator_node(llm_with_tools):
+    """Create simplified orchestrator node - new enhanced version"""
+    return create_orchestrator_node(llm_with_tools) 
