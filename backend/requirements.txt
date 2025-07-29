@@ -1,0 +1,25 @@
+# Web server (like Express.js for Python)
+fastapi==0.115.6
+uvicorn==0.34.0
+
+# LangChain and LangGraph - AI libraries  
+langchain==0.3.14
+langgraph==0.2.54
+
+# Google Gemini integration
+langchain-google-genai==2.0.8
+
+# Google Calendar API dependencies
+google-api-python-client==2.149.0
+google-auth==2.36.0
+google-auth-oauthlib==1.2.1
+google-auth-httplib2==0.2.0
+
+# For environment variables
+python-dotenv==1.0.1
+
+# For HTTP requests (Slack webhooks)
+requests==2.32.3
+
+# For JSON handling - newer version for Python 3.13
+pydantic==2.10.4 
