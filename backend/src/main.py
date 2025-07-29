@@ -4,6 +4,7 @@ Like Express.js but in Python!
 """
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 import os
@@ -20,6 +21,23 @@ app = FastAPI(
     title="LangGraph with Google Gemini",
     description="A simple API to learn LangChain and LangGraph using Google Gemini 1.5 Flash",
     version="1.0.0"
+)
+
+# Add CORS middleware to allow frontend connections
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",  # Next.js default
+        "http://localhost:3001", 
+        "http://localhost:8080",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+        "http://127.0.0.1:8080",
+        # Add any other localhost ports you might use
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Create our V2 orchestrator system when the server starts

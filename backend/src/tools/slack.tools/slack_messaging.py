@@ -10,7 +10,7 @@ from langchain_core.tools import tool
 # Predefined Slack channels with their webhook URLs
 SLACK_CHANNELS = {
     "team": "https://hooks.slack.com/services/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",
-    "development": "https://hooks.slack.com/services/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", 
+    "development": "https://hooks.slack.com/services/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", 
 }
 
 @tool
