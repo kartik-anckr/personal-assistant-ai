@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ClientWrapper } from "@/components/ClientWrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LangGraph AI Assistant",
+  title: "Nexus AI - Your Intelligent Personal Assistant",
   description:
-    "Professional AI chat interface powered by Google Gemini 1.5 Flash with LangGraph orchestration for math calculations, weather information, and general conversations.",
+    "Advanced AI-powered multi-agent assistant with weather insights, Slack integration, and intelligent automation",
 };
 
 export default function RootLayout({
@@ -28,7 +29,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <ClientWrapper>{children}</ClientWrapper>
       </body>
     </html>
   );

@@ -16,4 +16,11 @@ python-dotenv==1.0.1
 requests==2.32.3
 
 # For JSON handling - newer version for Python 3.13
-pydantic==2.10.4 
+pydantic==2.10.4
+
+# Supabase and Authentication dependencies
+supabase==2.17.0
+pyjwt==2.8.0
+bcrypt==4.1.2
+python-multipart==0.0.9
+email-validator==2.1.1 
