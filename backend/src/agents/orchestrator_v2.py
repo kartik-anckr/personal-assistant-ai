@@ -56,7 +56,7 @@ class SimplifiedTwoAgentOrchestrator:
         graph_builder = StateGraph(SimpleWorkflowState)
         
         # Add nodes using modular components
-        orchestrator_node = create_simplified_orchestrator_node(self.llm_with_tools)
+        orchestrator_node = create_simplified_orchestrator_node(self.llm_with_tools, self.llm)
         graph_builder.add_node("orchestrator", orchestrator_node)
         graph_builder.add_node("manager", ToolNode(tools=self.tools))
         
