@@ -7,14 +7,11 @@ import os
 import importlib.util
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import StateGraph
-from langgraph.prebuilt import ToolNode
+from langgraph.graph import START, END
 
-# Import all enhanced Slack tools
+# Import only the send message tool
 from ..tools import (
-    send_slack_message, 
-    read_slack_messages,
-    list_slack_channels,
-    get_channel_info,
+    send_slack_message,
     SLACK_CHANNELS
 )
 
@@ -25,14 +22,13 @@ _slack_state_module = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_slack_state_module)
 SlackState = _slack_state_module.SlackState
 
-# Import nodes and edges from modular components
+# Import nodes from modular components
 from ..nodes import create_enhanced_slack_chatbot_node
-from ..edges import create_enhanced_slack_workflow_edges
 
 def create_slack_agent():
-    """Create an enhanced Slack agent using modular components"""
+    """Create a simplified Slack agent with direct tool binding"""
     
-    print("📱 Creating Enhanced Slack Agent...")
+    print("📱 Creating Simplified Slack Agent...")
     
     # Set up Google Gemini 2.0 Flash
     gemini_api_key = os.getenv("GEMINI_API_KEY")
@@ -46,35 +42,30 @@ def create_slack_agent():
         temperature=0.2  # Lower temperature for precise messaging
     )
     
-    # Enhanced Slack tools - multiple tools for comprehensive Slack capabilities
+    # Simplified Slack tools - only send message tool
     slack_tools = [
-        send_slack_message,
-        read_slack_messages,
-        list_slack_channels,
-        get_channel_info
+        send_slack_message
     ]
     llm_with_tools = llm.bind_tools(slack_tools)
     
     # Get available channels for the prompt
     available_channels = ", ".join(SLACK_CHANNELS.keys())
     
-    # Create state graph using modular components
+    # Create state graph
     graph_builder = StateGraph(SlackState)
     
-    # Add nodes using modular components
+    # Only one node needed
     slack_chatbot_node = create_enhanced_slack_chatbot_node(llm_with_tools, available_channels)
     graph_builder.add_node("slack_chatbot", slack_chatbot_node)
     
-    tool_node = ToolNode(tools=slack_tools)
-    graph_builder.add_node("slack_tools", tool_node)
-    
-    # Add edges using modular components
-    graph_builder = create_enhanced_slack_workflow_edges(graph_builder)
+    # Simple edges: start → chatbot → end
+    graph_builder.add_edge(START, "slack_chatbot")
+    graph_builder.add_edge("slack_chatbot", END)
     
     # Compile
     graph = graph_builder.compile()
     
-    print("✅ Enhanced Slack Agent ready!")
+    print("✅ Simplified Slack Agent ready!")
     print(f"📋 Available channels: {available_channels}")
-    print("🔧 Available tools: send messages, read messages, list channels, get channel info")
+    print("🔧 Available tools: send messages")
     return graph

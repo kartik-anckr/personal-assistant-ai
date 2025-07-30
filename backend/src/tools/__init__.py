@@ -1,22 +1,19 @@
 """
-Enhanced tools module - exports all available tools for Simplified Two-Agent System
-Includes enhanced Slack and Weather capabilities only
+Simplified tools module - exports all available tools for Simplified Two-Agent System
+Includes simplified Slack messaging and enhanced Weather capabilities
 """
 
 import importlib.util
 import os
 
-# Import enhanced slack tools from the slack.tools directory
+# Import simplified slack tools from the slack.tools directory
 _slack_tools_path = os.path.join(os.path.dirname(__file__), 'slack.tools', 'slack_messaging.py')
 _spec = importlib.util.spec_from_file_location("slack_messaging", _slack_tools_path)
 _slack_messaging = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_slack_messaging)
 
-# Export all enhanced slack tools
+# Export only the send message slack tool
 send_slack_message = _slack_messaging.send_slack_message
-read_slack_messages = _slack_messaging.read_slack_messages
-list_slack_channels = _slack_messaging.list_slack_channels
-get_channel_info = _slack_messaging.get_channel_info
 SLACK_CHANNELS = _slack_messaging.SLACK_CHANNELS
 
 # Import enhanced weather tools from the weather.tools directory
@@ -49,7 +46,7 @@ try:
         
         # Rename tools to match the simplified architecture
         slack_tool.name = "invoke_slack_agent"
-        slack_tool.description = "Handle Slack-related requests including messaging, reading messages, and channel management"
+        slack_tool.description = "Handle Slack messaging requests - send messages to Slack channels"
         
         weather_tool.name = "invoke_weather_agent" 
         weather_tool.description = "Handle weather-related requests including current weather, forecasts, and climate data"
@@ -68,11 +65,8 @@ finally:
     sys.path.remove(_tools_dir)
 
 __all__ = [
-    # Enhanced Slack tools
-    'send_slack_message', 
-    'read_slack_messages',
-    'list_slack_channels',
-    'get_channel_info',
+    # Simplified Slack tools
+    'send_slack_message',
     'SLACK_CHANNELS',
     
     # Enhanced Weather tools
