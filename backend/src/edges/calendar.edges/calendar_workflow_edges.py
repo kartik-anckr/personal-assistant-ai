@@ -18,7 +18,7 @@ def create_calendar_workflow_edges(graph_builder):
         {"tools": "calendar_tools", "__end__": END}
     )
 
-    # After tool execution, end (tools handle the final response)
-    graph_builder.add_edge("calendar_tools", END)
+    # After tool execution, return to chatbot for final response generation
+    graph_builder.add_edge("calendar_tools", "calendar_chatbot")
 
     return graph_builder 

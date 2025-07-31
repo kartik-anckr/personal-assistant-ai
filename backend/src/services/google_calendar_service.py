@@ -189,10 +189,10 @@ class GoogleCalendarService:
             logger.info("📅 Building Calendar API service...")
             service = build('calendar', 'v3', credentials=creds)
 
-            # Create the event object with proper timezone
+            # Create the event object with proper timezone and Google Meet
             event = {
                 'summary': event_title,
-                'description': event_description,
+                'description': f"{event_description}\n\n📹 Google Meet link will be added automatically",
                 'start': {
                     'dateTime': start_time,
                     'timeZone': 'Asia/Kolkata',  # Use user's timezone (IST)
@@ -200,19 +200,50 @@ class GoogleCalendarService:
                 'end': {
                     'dateTime': end_time,
                     'timeZone': 'Asia/Kolkata',  # Use user's timezone (IST)
+                },
+                'conferenceData': {
+                    'createRequest': {
+                        'requestId': f"meet-{hash(event_title + start_time)}",  # Unique request ID
+                        'conferenceSolutionKey': {
+                            'type': 'hangoutsMeet'
+                        }
+                    }
+                },
+                'attendees': [],  # Can add attendees later if needed
+                'reminders': {
+                    'useDefault': True,
                 }
             }
 
-            logger.info(f"📅 Inserting event into calendar...")
-            # Insert the event
-            created_event = service.events().insert(calendarId='primary', body=event).execute()
+            logger.info(f"📅 Inserting event into calendar with Google Meet...")
+            # Insert the event with conference data support
+            created_event = service.events().insert(
+                calendarId='primary', 
+                body=event,
+                conferenceDataVersion=1  # Required for Google Meet integration
+            ).execute()
             logger.info(f"📅 Event created successfully: {created_event.get('id')}")
+            
+            # Extract Google Meet link if available
+            meet_link = None
+            if 'conferenceData' in created_event and 'entryPoints' in created_event['conferenceData']:
+                for entry_point in created_event['conferenceData']['entryPoints']:
+                    if entry_point.get('entryPointType') == 'video':
+                        meet_link = entry_point.get('uri')
+                        logger.info(f"📹 Google Meet link created: {meet_link}")
+                        break
 
+            # Prepare success message with Google Meet link
+            success_message = f"✅ Calendar event '{event_title}' created successfully!"
+            if meet_link:
+                success_message += f"\n📹 Google Meet: {meet_link}"
+            
             return {
                 'success': True,
                 'event_id': created_event.get('id'),
                 'event_link': created_event.get('htmlLink'),
-                'message': f"✅ Calendar event '{event_title}' created successfully!"
+                'meet_link': meet_link,
+                'message': success_message
             }
 
         except Exception as e:
