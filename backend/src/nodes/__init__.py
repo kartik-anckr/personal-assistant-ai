@@ -31,11 +31,20 @@ try:
 finally:
     sys.path.remove(_weather_nodes_dir)
 
+# Import from calendar.nodes directory
+_calendar_nodes_dir = os.path.join(os.path.dirname(__file__), 'calendar.nodes')
+sys.path.insert(0, _calendar_nodes_dir)
+try:
+    from calendar_chatbot_node import create_calendar_chatbot_node
+finally:
+    sys.path.remove(_calendar_nodes_dir)
+
 __all__ = [
     'create_orchestrator_node', 
     'create_simplified_orchestrator_node',
     'create_context_update_node', 
     'create_slack_chatbot_node',
     'create_enhanced_slack_chatbot_node',
-    'create_enhanced_weather_chatbot_node'
+    'create_enhanced_weather_chatbot_node',
+    'create_calendar_chatbot_node'
 ] 

@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { chatAPI } from "@/lib/api";
 import { LogOut, Send, User, Bot, Calendar, Cloud } from "lucide-react";
 import toast from "react-hot-toast";
+import { CalendarIntegration } from "@/components/calendar/CalendarIntegration";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -154,15 +155,18 @@ export default function ChatPage() {
                 </div>
               </div>
               <div className="flex items-center space-x-3">
-                <Bot className="h-8 w-8 text-purple-500" />
+                <Calendar className="h-8 w-8 text-purple-500" />
                 <div>
-                  <h3 className="font-medium">Smart Routing</h3>
-                  <p className="text-sm text-gray-600">Auto-agent selection</p>
+                  <h3 className="font-medium">Calendar Agent</h3>
+                  <p className="text-sm text-gray-600">Schedule events</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Calendar Integration */}
+        <CalendarIntegration />
 
         {/* Chat Interface */}
         <div className="bg-white shadow rounded-lg">
@@ -179,8 +183,9 @@ export default function ChatPage() {
                 <Bot className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                 <p>Start a conversation with your AI assistant!</p>
                 <p className="text-sm mt-2">
-                  Try: &quot;What&apos;s the weather in Tokyo?&quot; or
-                  &quot;Send a message to team&quot;
+                  Try: &quot;What&apos;s the weather in Tokyo?&quot;, &quot;Send
+                  a message to team&quot;, or &quot;Schedule meeting tomorrow at
+                  3pm&quot;
                 </p>
               </div>
             ) : (
@@ -236,7 +241,7 @@ export default function ChatPage() {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
-                placeholder="Type your message... (e.g., 'What's the weather in NYC?' or 'Send hello to team')"
+                placeholder="Type your message... (e.g., 'What's the weather in NYC?', 'Send hello to team', or 'Schedule meeting tomorrow at 2pm')"
                 disabled={chatLoading}
               />
               <button

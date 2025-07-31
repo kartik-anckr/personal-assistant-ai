@@ -9,4 +9,5 @@ from langgraph.graph.message import add_messages
 class SimpleWorkflowState(TypedDict):
     messages: Annotated[list, add_messages]
     agent_results: Dict[str, str]  # Store results from different agents
-    context: str  # Simple context passing 
+    context: str  # Simple context passing
+    user_id: str  # User ID for authenticated operations 

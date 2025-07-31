@@ -1,19 +1,19 @@
 """
-Simplified Two-Agent LangGraph System
+Enhanced Three-Agent LangGraph System
 Routes user input to appropriate specialized agents using LLM-driven agent selection
 """
 
 import os
-from .agents.orchestrator_v2 import SimplifiedTwoAgentOrchestrator
+from .agents.orchestrator_v3 import EnhancedThreeAgentOrchestrator
 
 async def create_agent():
-    """Create the simplified two-agent orchestrator system"""
-    print("🚀 Creating Simplified Two-Agent Orchestrator...")
-    return SimplifiedTwoAgentOrchestrator()
+    """Create the enhanced three-agent orchestrator system"""
+    print("🚀 Creating Enhanced Three-Agent Orchestrator...")
+    return EnhancedThreeAgentOrchestrator()
 
-async def chat_with_agent(simplified_orchestrator, user_input: str):
-    """Chat with the simplified two-agent orchestrator system"""
-    return await simplified_orchestrator.chat(user_input)
+async def chat_with_agent(enhanced_orchestrator, user_input: str, user_id: str = None):
+    """Chat with the enhanced three-agent orchestrator system"""
+    return await enhanced_orchestrator.chat(user_input, user_id)
 
 async def test_agent():
     """Test the simplified two-agent orchestrator system"""
