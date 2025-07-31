@@ -7,7 +7,7 @@ import { Toaster } from "react-hot-toast";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "LangGraph Assistant",
+  title: "Nexus AI",
   description: "AI-powered multi-agent assistant with authentication",
 };
 

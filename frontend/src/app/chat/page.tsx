@@ -95,9 +95,7 @@ export default function ChatPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-900">
-                LangGraph Assistant
-              </h1>
+              <h1 className="text-2xl font-bold text-gray-900">Nexus AI</h1>
             </div>
 
             <div className="flex items-center space-x-4">
@@ -133,7 +131,7 @@ export default function ChatPage() {
         <div className="bg-white shadow rounded-lg mb-6">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-medium text-gray-900">
-              Welcome to LangGraph Assistant
+              Welcome to Nexus AI
             </h2>
             <p className="text-sm text-gray-600">
               Your AI-powered multi-agent assistant is ready to help!
@@ -237,7 +235,7 @@ export default function ChatPage() {
                 type="text"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                 placeholder="Type your message... (e.g., 'What's the weather in NYC?' or 'Send hello to team')"
                 disabled={chatLoading}
               />

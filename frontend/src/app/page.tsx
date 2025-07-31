@@ -38,11 +38,11 @@ export default function Home() {
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-            <span className="text-blue-600">LangGraph</span> Assistant
+            <span className="text-blue-600">Nexus</span> AI
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Your intelligent multi-agent AI assistant powered by LangGraph. Get
-            weather updates, send Slack messages, and interact with multiple
+            Your intelligent multi-agent AI assistant powered by advanced AI.
+            Get weather updates, send Slack messages, and interact with multiple
             specialized AI agents through a single interface.
           </p>
 
