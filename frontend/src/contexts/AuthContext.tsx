@@ -12,6 +12,7 @@ import React, {
   ReactNode,
 } from "react";
 import { User, authAPI, AuthResponse } from "@/lib/api";
+import toast from "react-hot-toast";
 
 interface AuthContextType {
   user: User | null;
@@ -77,12 +78,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem("user_data", JSON.stringify(response.user));
 
       setUser(response.user);
-      console.log("Successfully signed in!");
-    } catch (error: unknown) {
-      const message =
-        (error as { response?: { data?: { detail?: string } } }).response?.data
-          ?.detail || "Sign in failed";
-      console.error(message);
+      toast.success("Successfully signed in!");
+    } catch (error: any) {
+      const message = error.response?.data?.detail || "Sign in failed";
+      toast.error(message);
       throw error;
     } finally {
       setLoading(false);
@@ -111,12 +110,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem("user_data", JSON.stringify(response.user));
 
       setUser(response.user);
-      console.log("Account created successfully!");
-    } catch (error: unknown) {
-      const message =
-        (error as { response?: { data?: { detail?: string } } }).response?.data
-          ?.detail || "Sign up failed";
-      console.error(message);
+      toast.success("Account created successfully!");
+    } catch (error: any) {
+      const message = error.response?.data?.detail || "Sign up failed";
+      toast.error(message);
       throw error;
     } finally {
       setLoading(false);
@@ -127,7 +124,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("user_data");
     setUser(null);
-    console.log("Signed out successfully");
+    toast.success("Signed out successfully");
   };
 
   const value = {

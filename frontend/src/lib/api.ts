@@ -36,7 +36,9 @@ apiClient.interceptors.response.use(
       // Clear token and redirect to login
       localStorage.removeItem("access_token");
       localStorage.removeItem("user_data");
-      window.location.href = "/auth/signin";
+      if (typeof window !== "undefined") {
+        window.location.href = "/auth/signin";
+      }
     }
     return Promise.reject(error);
   }
@@ -73,6 +75,16 @@ export interface SigninRequest {
   password: string;
 }
 
+export interface ChatMessage {
+  message: string;
+}
+
+export interface ChatResponse {
+  response: string;
+  success: boolean;
+  user_id: string;
+}
+
 // Auth API functions
 export const authAPI = {
   signup: async (data: SignupRequest): Promise<AuthResponse> => {
@@ -98,9 +110,7 @@ export const authAPI = {
 
 // Chat API
 export const chatAPI = {
-  sendMessage: async (
-    message: string
-  ): Promise<{ response: string; success: boolean; user_id: string }> => {
+  sendMessage: async (message: string): Promise<ChatResponse> => {
     const response = await apiClient.post("/chat", { message });
     return response.data;
   },
