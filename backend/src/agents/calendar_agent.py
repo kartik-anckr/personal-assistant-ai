@@ -4,7 +4,7 @@ Google Calendar Agent - Handles calendar event creation through natural language
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import StateGraph
-from langgraph.prebuilt import ToolNode
+from langgraph.graph import START, END
 import os
 import importlib.util
 
@@ -15,7 +15,7 @@ _calendar_state_module = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_calendar_state_module)
 CalendarState = _calendar_state_module.CalendarState
 
-# Import modular components using the same pattern as other agents
+# Import calendar tools
 import sys
 _tools_dir = os.path.join(os.path.dirname(__file__), '..', 'tools', 'calendar.tools')
 sys.path.insert(0, _tools_dir)
@@ -24,6 +24,7 @@ try:
 finally:
     sys.path.remove(_tools_dir)
 
+# Import calendar chatbot node
 _nodes_dir = os.path.join(os.path.dirname(__file__), '..', 'nodes', 'calendar.nodes')
 sys.path.insert(0, _nodes_dir)
 try:
@@ -31,16 +32,9 @@ try:
 finally:
     sys.path.remove(_nodes_dir)
 
-_edges_dir = os.path.join(os.path.dirname(__file__), '..', 'edges', 'calendar.edges')
-sys.path.insert(0, _edges_dir)
-try:
-    from calendar_workflow_edges import create_calendar_workflow_edges
-finally:
-    sys.path.remove(_edges_dir)
-
 def create_calendar_agent():
-    """Create Google Calendar agent graph"""
-    print("🔧 Creating Google Calendar Agent...")
+    """Create simplified Google Calendar agent without ToolNode"""
+    print("📅 Creating Simplified Google Calendar Agent...")
 
     # Create LLM for calendar operations
     gemini_api_key = os.getenv("GEMINI_API_KEY")
@@ -53,33 +47,36 @@ def create_calendar_agent():
         temperature=0.1  # Lower temperature for more precise calendar operations
     )
 
-    # Create calendar tools
+    # Create calendar tools and bind directly to LLM
     calendar_tools = create_calendar_tools()
     llm_with_tools = llm.bind_tools(calendar_tools)
 
-    # Create calendar agent graph
+    # Build simplified graph
     graph_builder = StateGraph(CalendarState)
 
-    # Add nodes
-    calendar_chatbot = create_calendar_chatbot_node(llm_with_tools)
-    graph_builder.add_node("calendar_chatbot", calendar_chatbot)
-    graph_builder.add_node("calendar_tools", ToolNode(tools=calendar_tools))
+    # Only one node needed - calendar chatbot handles everything
+    calendar_chatbot_node = create_calendar_chatbot_node(llm_with_tools)
+    graph_builder.add_node("calendar_chatbot", calendar_chatbot_node)
 
-    # Add edges
-    graph_builder = create_calendar_workflow_edges(graph_builder)
+    # Simple edges: start → calendar_chatbot → end
+    graph_builder.add_edge(START, "calendar_chatbot")
+    graph_builder.add_edge("calendar_chatbot", END)
 
-    # Compile graph
+    # Compile and return
     graph = graph_builder.compile()
 
-    print("✅ Google Calendar Agent ready!")
+    print("✅ Simplified Google Calendar Agent ready!")
     return graph
 
 # Chat function for testing
-async def chat_with_calendar_agent(agent, user_input: str):
+async def chat_with_calendar_agent(agent, user_input: str, user_id: str = None):
     """Chat with calendar agent for testing"""
     print(f"\n📅 [CALENDAR AGENT] Processing: {user_input}")
 
-    initial_state = {"messages": [{"role": "user", "content": user_input}]}
+    initial_state = {
+        "messages": [{"role": "user", "content": user_input}],
+        "user_id": user_id
+    }
     result = agent.invoke(initial_state)
 
     final_message = result["messages"][-1]
