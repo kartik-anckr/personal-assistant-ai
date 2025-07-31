@@ -189,17 +189,17 @@ class GoogleCalendarService:
             logger.info("📅 Building Calendar API service...")
             service = build('calendar', 'v3', credentials=creds)
 
-            # Create the event object
+            # Create the event object with proper timezone
             event = {
                 'summary': event_title,
                 'description': event_description,
                 'start': {
                     'dateTime': start_time,
-                    'timeZone': 'UTC',
+                    'timeZone': 'Asia/Kolkata',  # Use user's timezone (IST)
                 },
                 'end': {
                     'dateTime': end_time,
-                    'timeZone': 'UTC',
+                    'timeZone': 'Asia/Kolkata',  # Use user's timezone (IST)
                 }
             }
 
@@ -252,7 +252,7 @@ class GoogleCalendarService:
         except Exception as e:
             logger.error(f"📅 Failed to update stored tokens: {e}")
 
-    def parse_natural_language_event(self, prompt: str, user_timezone: str = 'UTC') -> Dict[str, Any]:
+    def parse_natural_language_event(self, prompt: str, user_timezone: str = 'Asia/Kolkata') -> Dict[str, Any]:
         """Parse natural language prompt into event details"""
         # This is a simplified parser - in production, use more sophisticated NLP
         import re
@@ -262,30 +262,60 @@ class GoogleCalendarService:
         title_match = re.search(r'(schedule|create|add|plan)\s+(.*?)\s+(for|at|on|tomorrow|today)', prompt, re.IGNORECASE)
         title = title_match.group(2) if title_match else "Meeting"
 
-        # Simple time parsing (enhance this)
-        time_patterns = [
-            (r'(\d{1,2})\s*(am|pm)', lambda m: int(m.group(1)) + (12 if m.group(2).lower() == 'pm' and int(m.group(1)) != 12 else 0)),
-            (r'(\d{1,2}):(\d{2})\s*(am|pm)', lambda m: int(m.group(1)) + (12 if m.group(3).lower() == 'pm' and int(m.group(1)) != 12 else 0))
-        ]
-
+        # Enhanced time parsing with proper AM/PM handling
         hour = 10  # Default hour
-        for pattern, extractor in time_patterns:
-            match = re.search(pattern, prompt, re.IGNORECASE)
-            if match:
-                hour = extractor(match)
-                break
-
-        # Determine date
-        if 'tomorrow' in prompt.lower():
-            event_date = datetime.now() + timedelta(days=1)
-        elif 'today' in prompt.lower():
-            event_date = datetime.now()
+        minute = 0  # Default minute
+        
+        # Look for time patterns like "10am", "2:30pm", "10:00 AM"
+        time_match = re.search(r'(\d{1,2})(?::(\d{2}))?\s*(am|pm)', prompt, re.IGNORECASE)
+        if time_match:
+            parsed_hour = int(time_match.group(1))
+            parsed_minute = int(time_match.group(2)) if time_match.group(2) else 0
+            am_pm = time_match.group(3).lower()
+            
+            # Convert to 24-hour format
+            if am_pm == 'pm' and parsed_hour != 12:
+                parsed_hour += 12
+            elif am_pm == 'am' and parsed_hour == 12:
+                parsed_hour = 0
+                
+            hour = parsed_hour
+            minute = parsed_minute
+            
+            logger.info(f"📅 Parsed time: {hour:02d}:{minute:02d} from '{time_match.group(0)}'")
         else:
-            event_date = datetime.now() + timedelta(days=1)  # Default to tomorrow
+            logger.info(f"📅 Using default time: {hour:02d}:{minute:02d}")
 
-        # Set specific time
-        start_time = event_date.replace(hour=hour, minute=0, second=0, microsecond=0)
+        # Determine date - use timezone-aware datetime
+        from datetime import timezone
+        import pytz
+        
+        # Get user's timezone (default to India Standard Time)
+        try:
+            user_tz = pytz.timezone(user_timezone)
+            logger.info(f"📅 Using timezone: {user_timezone}")
+        except:
+            # Fallback to India Standard Time if invalid timezone
+            user_tz = pytz.timezone('Asia/Kolkata')
+            logger.info(f"📅 Fallback to Asia/Kolkata timezone")
+        
+        # Get current time in user's timezone
+        now_in_tz = datetime.now(user_tz)
+        
+        if 'tomorrow' in prompt.lower():
+            event_date = now_in_tz + timedelta(days=1)
+        elif 'today' in prompt.lower():
+            event_date = now_in_tz
+        else:
+            event_date = now_in_tz + timedelta(days=1)  # Default to tomorrow
+
+        # Set specific time in user's timezone
+        start_time = event_date.replace(hour=hour, minute=minute, second=0, microsecond=0)
         end_time = start_time + timedelta(hours=1)  # Default 1-hour duration
+
+        logger.info(f"📅 Event time in {user_timezone}: {start_time}")
+        logger.info(f"📅 Event start: {start_time.isoformat()}")
+        logger.info(f"📅 Event end: {end_time.isoformat()}")
 
         return {
             'title': title.title(),
