@@ -22,4 +22,12 @@ try:
 finally:
     sys.path.remove(_weather_states_dir)
 
-__all__ = ['SimpleWorkflowState', 'WeatherState'] 
+# Import from calendar.states directory
+_calendar_states_dir = os.path.join(os.path.dirname(__file__), 'calendar.states')
+sys.path.insert(0, _calendar_states_dir)
+try:
+    from calendar_state import CalendarState
+finally:
+    sys.path.remove(_calendar_states_dir)
+
+__all__ = ['SimpleWorkflowState', 'WeatherState', 'CalendarState'] 

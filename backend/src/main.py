@@ -10,12 +10,12 @@ import uvicorn
 import os
 from dotenv import load_dotenv
 
-# Import our simplified two-agent orchestrator
+# Import our enhanced three-agent orchestrator
 import sys
 import os
 _backend_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, _backend_path)
-from src.agents.orchestrator_v2 import SimplifiedTwoAgentOrchestrator
+from src.agents.orchestrator_v3 import EnhancedThreeAgentOrchestrator
 
 # Import authentication components
 from src.routes.auth_routes import router as auth_router, get_current_user
@@ -27,8 +27,8 @@ load_dotenv()
 # Create FastAPI app (like creating an Express app)
 app = FastAPI(
     title="LangGraph Multi-Agent System with Authentication",
-    description="AI-powered multi-agent system with user authentication, Slack and Weather capabilities",
-    version="2.0.0"
+    description="AI-powered multi-agent system with user authentication, Slack, Weather, and Calendar capabilities",
+    version="3.0.0"
 )
 
 # Add CORS middleware to allow frontend connections
@@ -48,29 +48,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Create our simplified orchestrator system when the server starts
-simplified_orchestrator = None
+# Create our enhanced orchestrator system when the server starts
+enhanced_orchestrator = None
 
 @app.on_event("startup")
 async def startup():
     """This runs when the server starts"""
-    global simplified_orchestrator
-    print("🚀 Starting server with Simplified Two-Agent Orchestrator...")
+    global enhanced_orchestrator
+    print("🚀 Starting server with Enhanced Three-Agent Orchestrator...")
     
     # Check if we have Gemini API key
     gemini_key = os.getenv("GEMINI_API_KEY")
     
     if gemini_key:
         try:
-            simplified_orchestrator = SimplifiedTwoAgentOrchestrator()
-            print("✅ Simplified Two-Agent Orchestrator created successfully!")
+            enhanced_orchestrator = EnhancedThreeAgentOrchestrator()
+            print("✅ Enhanced Three-Agent Orchestrator created successfully!")
         except Exception as e:
-            print(f"❌ Failed to create Simplified Orchestrator: {e}")
+            print(f"❌ Failed to create Enhanced Orchestrator: {e}")
     else:
         print("⚠️  No Gemini API key found. Please set GEMINI_API_KEY in .env file")
 
-# Include authentication routes
+# Include authentication and calendar routes
 app.include_router(auth_router)
+from src.routes.calendar_routes import router as calendar_router
+app.include_router(calendar_router)
 
 # Simple models for our API (like TypeScript interfaces)
 class ChatMessage(BaseModel):
@@ -87,12 +89,13 @@ async def home():
     """Enhanced home page with authentication info"""
     return {
         "message": "LangGraph Multi-Agent System with Authentication",
-        "version": "2.0.0",
+        "version": "3.0.0",
         "features": [
             "User authentication (signup/signin)",
             "Multi-agent orchestration",
             "Slack messaging",
-            "Weather information"
+            "Weather information",
+            "Google Calendar integration"
         ],
         "auth_endpoints": {
             "signup": "/auth/signup",
@@ -101,7 +104,8 @@ async def home():
         },
         "agents": {
             "slack": "Comprehensive Slack operations (send, read, channels, info)",
-            "weather": "Complete weather services (current, forecast, climate, compare)"
+            "weather": "Complete weather services (current, forecast, climate, compare)",
+            "calendar": "Google Calendar event creation and scheduling"
         },
         "ai_model": "Google Gemini 2.0 Flash",
         "docs": "/docs"
@@ -110,7 +114,7 @@ async def home():
 @app.get("/health")
 async def health_check():
     """Check if everything is working"""
-    has_system = simplified_orchestrator is not None
+    has_system = enhanced_orchestrator is not None
     
     # Check Supabase configuration
     import os
@@ -124,10 +128,10 @@ async def health_check():
         "status": "healthy" if has_system else "no_ai_configured",
         "ai_ready": has_system,
         "auth_ready": supabase_configured,
-        "system_type": "Simplified Two-Agent Orchestrator" if has_system else "None",
-        "agents": ["Enhanced Slack Agent", "Enhanced Weather Agent"] if has_system else [],
+        "system_type": "Enhanced Three-Agent Orchestrator" if has_system else "None",
+        "agents": ["Enhanced Slack Agent", "Enhanced Weather Agent", "Google Calendar Agent"] if has_system else [],
         "ai_model": "Google Gemini 2.0 Flash" if has_system else "None",
-        "message": "Simplified Two-Agent System is ready!" if has_system else "Please set GEMINI_API_KEY in .env file",
+        "message": "Enhanced Three-Agent System is ready!" if has_system else "Please set GEMINI_API_KEY in .env file",
         "auth_message": "Supabase authentication ready!" if supabase_configured else "Please configure Supabase environment variables in .env file"
     }
 
@@ -171,15 +175,15 @@ async def authenticated_chat(
     
     The system uses LLM intelligence to automatically select the right agent and tools!
     """
-    if not simplified_orchestrator:
+    if not enhanced_orchestrator:
         raise HTTPException(
             status_code=503,
             detail="AI system not available"
         )
     
     try:
-        # Use our simplified orchestrator system to get a response
-        ai_response = await simplified_orchestrator.chat(message.message)
+        # Use our enhanced orchestrator system to get a response with user context
+        ai_response = await enhanced_orchestrator.chat(message.message, current_user.id)
         
         return ChatResponse(
             response=ai_response,
@@ -199,8 +203,8 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     debug = os.getenv("DEBUG", "true").lower() == "true"
     
-    print(f"🌟 Starting Simplified Two-Agent server with Google Gemini 2.0 Flash on http://localhost:{port}")
-    print(f"🎭 Two-Agent System: Slack + Weather with LLM-driven selection!")
+    print(f"🌟 Starting Enhanced Three-Agent server with Google Gemini 2.0 Flash on http://localhost:{port}")
+    print(f"🎭 Three-Agent System: Slack + Weather + Calendar with LLM-driven selection!")
     print(f"⚡ Using Gemini 2.0 Flash with intelligent agent routing!")
     print(f"📚 API docs will be at http://localhost:{port}/docs")
     

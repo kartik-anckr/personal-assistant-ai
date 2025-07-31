@@ -85,6 +85,17 @@ export interface ChatResponse {
   user_id: string;
 }
 
+export interface CalendarStatus {
+  connected: boolean;
+  provider: string | null;
+  scopes: string[];
+  connected_at: string | null;
+}
+
+export interface CalendarConnectResponse {
+  auth_url: string;
+}
+
 // Auth API functions
 export const authAPI = {
   signup: async (data: SignupRequest): Promise<AuthResponse> => {
@@ -112,6 +123,24 @@ export const authAPI = {
 export const chatAPI = {
   sendMessage: async (message: string): Promise<ChatResponse> => {
     const response = await apiClient.post("/chat", { message });
+    return response.data;
+  },
+};
+
+// Calendar API functions
+export const calendarAPI = {
+  connect: async (): Promise<CalendarConnectResponse> => {
+    const response = await apiClient.get("/calendar/connect");
+    return response.data;
+  },
+
+  getStatus: async (): Promise<CalendarStatus> => {
+    const response = await apiClient.get("/calendar/status");
+    return response.data;
+  },
+
+  disconnect: async (): Promise<{ message: string }> => {
+    const response = await apiClient.delete("/calendar/disconnect");
     return response.data;
   },
 };

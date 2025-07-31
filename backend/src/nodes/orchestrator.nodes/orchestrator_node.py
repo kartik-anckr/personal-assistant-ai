@@ -12,27 +12,23 @@ def create_orchestrator_node(llm_with_tools, base_llm=None):
     if base_llm is None:
         base_llm = llm_with_tools
     
-    # Enhanced system prompt for two-agent selection
-    SIMPLIFIED_SYSTEM_PROMPT = """Hey there! I'm your friendly personal assistant and I'm here to help you with anything you need! 😊
-
-Think of me as your helpful buddy who knows exactly who to connect you with for different tasks. I've got two amazing specialist friends who are experts in their areas:
+    # Enhanced system prompt for three-agent selection
+    ENHANCED_SYSTEM_PROMPT = """Hey there! I'm your friendly personal assistant with three amazing specialist friends! 😊
 
 🤖 MY SPECIALIST FRIENDS:
-- invoke_slack_agent: Your Slack messenger who sends messages to Slack channels quickly and easily
-- invoke_weather_agent: Your weather expert who knows everything about forecasts, climate data, and weather conditions
+- invoke_slack_agent: Your Slack messenger for team communication
+- invoke_weather_agent: Your weather expert for forecasts and climate data
+- invoke_calendar_agent: Your calendar assistant for scheduling events and meetings
 
 💫 HOW I HELP YOU:
-I listen to what you need and automatically connect you with the right specialist friend! No need for special keywords - just talk to me naturally like you would to any friend.
+I listen to what you need and automatically connect you with the right specialist!
 
-🎯 HERE'S HOW IT WORKS:
-- "Send hello to team channel" → I'll get your Slack messenger to help!
-- "Tell the development channel I'll be late" → Your Slack friend will send that message!
-- "Send a message to the team saying meeting is cancelled" → Perfect job for your Slack specialist!
-- "Weather in London?" → Time to call your weather expert!
-- "Give me a 5-day forecast for Tokyo" → Your weather buddy will sort this out!
-- "Compare weather between NYC and LA" → Weather specialist to the rescue!
+🎯 EXAMPLES:
+📱 SLACK: "Send hello to team channel" → Slack specialist handles it!
+🌤️ WEATHER: "Weather in London?" → Weather expert provides forecast!
+📅 CALENDAR: "Schedule meeting tomorrow at 2pm" → Calendar assistant creates the event!
 
-Just tell me what you need in your own words, and I'll make sure you get connected with exactly the right helper. I'm here to make your life easier! 🚀"""
+Just tell me what you need naturally - I'll route you to the perfect helper! 🚀"""
 
     def simplified_orchestrator_with_tools(state):
         """Orchestrator node that handles both routing and response formatting"""
@@ -71,7 +67,7 @@ Remember: You're not just relaying data - you're being a helpful, friendly assis
             # Initial user request - route to appropriate tools
             has_system = any(getattr(msg, 'type', None) == 'system' for msg in messages)
             if not has_system:
-                system_msg = SystemMessage(content=SIMPLIFIED_SYSTEM_PROMPT)
+                system_msg = SystemMessage(content=ENHANCED_SYSTEM_PROMPT)
                 messages = [system_msg] + messages
             
             # Add context from previous agent results if available
@@ -81,9 +77,19 @@ Remember: You're not just relaying data - you're being a helpful, friendly assis
                     messages[-1].content += context_info
             
             response = llm_with_tools.invoke(messages)
+            
+            # Ensure user_id is passed to tool calls
+            user_id = state.get("user_id")
+            if hasattr(response, 'tool_calls') and response.tool_calls and user_id:
+                for tool_call in response.tool_calls:
+                    if 'args' in tool_call and isinstance(tool_call['args'], dict):
+                        tool_call['args']['user_id'] = user_id
+                        print(f"🎭 [ORCHESTRATOR] Added user_id to tool call: {user_id}")
+            
             print(f"🎭 [ORCHESTRATOR] Routing user request to appropriate specialist")
         
-        return {"messages": [response]}
+        # Preserve user_id in the state
+        return {"messages": [response], "user_id": state.get("user_id")}
     
     return simplified_orchestrator_with_tools
 
