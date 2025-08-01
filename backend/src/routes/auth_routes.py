@@ -19,6 +19,11 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     """Dependency to get current authenticated user"""
     return await auth_service.get_current_user(credentials.credentials)
 
+async def get_current_user_with_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> tuple[UserResponse, str]:
+    """Dependency to get current authenticated user and JWT token"""
+    user = await auth_service.get_current_user(credentials.credentials)
+    return user, credentials.credentials
+
 @router.post("/signup", response_model=AuthResponse)
 async def signup(signup_data: UserSignupRequest):
     """Register a new user"""
