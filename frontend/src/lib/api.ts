@@ -83,6 +83,7 @@ export interface ChatResponse {
   response: string;
   success: boolean;
   user_id: string;
+  session_id?: string;
 }
 
 export interface CalendarStatus {
@@ -121,8 +122,74 @@ export const authAPI = {
 
 // Chat API
 export const chatAPI = {
-  sendMessage: async (message: string): Promise<ChatResponse> => {
-    const response = await apiClient.post("/chat", { message });
+  sendMessage: async (
+    message: string,
+    sessionId?: string
+  ): Promise<ChatResponse> => {
+    const requestBody = {
+      message,
+      session_id: sessionId || null,
+    };
+    const response = await apiClient.post("/chat", requestBody);
+    return response.data;
+  },
+};
+
+// Session management API
+export const sessionAPI = {
+  // Get all sessions for current user
+  getSessions: async () => {
+    const response = await apiClient.get("/sessions");
+    return response.data;
+  },
+
+  // Create new session
+  createSession: async (title: string = "New Chat", description?: string) => {
+    const response = await apiClient.post("/sessions", { title, description });
+    return response.data;
+  },
+
+  // Update session
+  updateSession: async (
+    sessionId: string,
+    title?: string,
+    description?: string
+  ) => {
+    const updateData: { title?: string; description?: string } = {};
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+
+    const response = await apiClient.put(`/sessions/${sessionId}`, updateData);
+    return response.data;
+  },
+
+  // Delete session
+  deleteSession: async (sessionId: string) => {
+    const response = await apiClient.delete(`/sessions/${sessionId}`);
+    return response.data;
+  },
+
+  // Get session messages
+  getSessionMessages: async (
+    sessionId: string,
+    limit?: number,
+    offset?: number
+  ) => {
+    const params = new URLSearchParams();
+    if (limit) params.append("limit", limit.toString());
+    if (offset) params.append("offset", offset.toString());
+
+    const url = `/sessions/${sessionId}/messages${
+      params.toString() ? "?" + params.toString() : ""
+    }`;
+
+    const response = await apiClient.get(url);
+    return response.data;
+  },
+
+  // Clear session messages
+  clearSessionMessages: async (sessionId: string) => {
+    const response = await apiClient.delete(`/sessions/${sessionId}/messages`);
     return response.data;
   },
 };

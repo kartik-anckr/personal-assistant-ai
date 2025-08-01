@@ -6,6 +6,10 @@ uvicorn==0.34.0
 langchain==0.3.14
 langgraph==0.2.54
 
+# LangGraph checkpointer for memory management
+langgraph-checkpoint==2.0.6
+langgraph-checkpoint-postgres==2.0.14
+
 # Google Gemini integration
 langchain-google-genai==2.0.8
 
@@ -35,4 +39,7 @@ google-api-python-client==2.110.0
 cryptography==41.0.8
 
 # For timezone handling
-pytz==2023.3 
+pytz==2023.3
+
+# PostgreSQL adapter for checkpointer
+psycopg2-binary==2.9.9 

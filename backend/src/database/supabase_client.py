@@ -86,6 +86,37 @@ class SupabaseManager:
         """Get Supabase admin client (lazy initialization)"""
         return get_supabase_admin()
 
+    def get_authenticated_client(self, jwt_token: str) -> Optional[Client]:
+        """Get Supabase client with user authentication"""
+        try:
+            if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+                return None
+                
+            # Create client with explicit options
+            options = ClientOptions(
+                schema='public',
+                headers={
+                    'X-Client-Info': 'supabase-py/2.3.4',
+                    'Authorization': f'Bearer {jwt_token}'
+                },
+                auto_refresh_token=False,
+                persist_session=False
+            )
+            
+            client = create_client(
+                supabase_url=SUPABASE_URL,
+                supabase_key=SUPABASE_ANON_KEY,
+                options=options
+            )
+            
+            # Set the user session with the JWT token
+            client.auth.set_session(jwt_token, refresh_token="")
+            
+            return client
+        except Exception as e:
+            logger.error(f"Failed to create authenticated Supabase client: {e}")
+            return None
+
     async def create_user(self, user_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Create a new user in the database"""
         if not self.admin:
