@@ -143,4 +143,17 @@ export const calendarAPI = {
     const response = await apiClient.delete("/calendar/disconnect");
     return response.data;
   },
+
+  // Get upcoming meetings
+  getUpcomingMeetings: async (query: string = "next 7 days") => {
+    const params = new URLSearchParams({ query });
+    const response = await apiClient.get(`/calendar/upcoming?${params}`);
+    return response.data;
+  },
+
+  // Post method for complex queries
+  getUpcomingMeetingsPost: async (query: string) => {
+    const response = await apiClient.post("/calendar/upcoming", { query });
+    return response.data;
+  },
 };

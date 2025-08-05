@@ -8,9 +8,18 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { chatAPI } from "@/lib/api";
-import { LogOut, Send, User, Bot, Calendar, Cloud } from "lucide-react";
+import {
+  LogOut,
+  User,
+  Bot,
+  Calendar,
+  Cloud,
+  MessageSquare,
+  Trash2,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { CalendarIntegration } from "@/components/calendar/CalendarIntegration";
+import UpcomingMeetings from "@/components/calendar/UpcomingMeetings";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -69,9 +78,9 @@ export default function ChatPage() {
     router.push("/auth/signin");
   };
 
-  const clearChat = () => {
+  const handleClearChat = () => {
     setChatHistory([]);
-    toast.success("Chat history cleared");
+    toast.success("Chat cleared");
   };
 
   if (loading) {
@@ -90,213 +99,198 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-900">Nexus AI</h1>
+    <div className="flex h-screen bg-gray-50">
+      {/* Sidebar */}
+      <div className="w-80 bg-white border-r border-gray-200 flex flex-col max-h-screen">
+        {/* User info */}
+        <div className="p-4 border-b border-gray-200 flex-shrink-0">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-medium text-gray-900">Nexus AI</h2>
+            <div className="flex items-center space-x-2">
+              <User className="h-4 w-4 text-gray-400" />
+              <span className="text-sm text-gray-600">
+                {user?.username || "User"}
+              </span>
             </div>
+          </div>
+          <button
+            onClick={handleClearChat}
+            className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Clear Chat
+          </button>
+        </div>
 
+        {/* Available Agents */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="p-4">
+            <h3 className="text-sm font-medium text-gray-900 mb-3">
+              Available Agents
+            </h3>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
+                <Cloud className="h-5 w-5 text-blue-500" />
+                <div>
+                  <div className="font-medium text-sm text-gray-900">
+                    Weather Agent
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Get weather forecasts
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
+                <MessageSquare className="h-5 w-5 text-green-500" />
+                <div>
+                  <div className="font-medium text-sm text-gray-900">
+                    Slack Agent
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Send team messages
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
+                <Calendar className="h-5 w-5 text-purple-500" />
+                <div>
+                  <div className="font-medium text-sm text-gray-900">
+                    Calendar Agent
+                  </div>
+                  <div className="text-xs text-gray-500">Schedule events</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Calendar Integration in Sidebar */}
+        <div className="p-4 border-t border-gray-200 flex-shrink-0">
+          <CalendarIntegration />
+        </div>
+
+        {/* Upcoming Meetings Widget - Made more compact */}
+        <div className="p-4 border-t border-gray-200 flex-shrink-0 max-h-64 overflow-y-auto">
+          <UpcomingMeetings query="today" autoRefresh={true} />
+        </div>
+
+        {/* Signout button */}
+        <div className="p-4 border-t border-gray-200 flex-shrink-0">
+          <button
+            onClick={handleSignout}
+            className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign Out
+          </button>
+        </div>
+      </div>
+
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Chat header */}
+        <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <MessageSquare className="h-6 w-6 text-blue-600" />
+              <h1 className="text-xl font-semibold text-gray-900">
+                AI Assistant Chat
+              </h1>
+            </div>
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <User className="h-5 w-5 text-gray-400" />
-                <span className="text-sm text-gray-700">
-                  {user.first_name || user.username}
-                </span>
-              </div>
-
-              <button
-                onClick={clearChat}
-                className="text-gray-600 hover:text-gray-800 text-sm"
-              >
-                Clear Chat
-              </button>
-
-              <button
-                onClick={handleSignout}
-                className="flex items-center space-x-1 text-red-600 hover:text-red-800"
-              >
-                <LogOut className="h-5 w-5" />
-                <span>Sign out</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        {/* Welcome Section */}
-        <div className="bg-white shadow rounded-lg mb-6">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">
-              Welcome to Nexus AI
-            </h2>
-            <p className="text-sm text-gray-600">
-              Your AI-powered multi-agent assistant is ready to help!
-            </p>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-center space-x-3">
-                <Cloud className="h-8 w-8 text-blue-500" />
-                <div>
-                  <h3 className="font-medium">Weather Agent</h3>
-                  <p className="text-sm text-gray-600">Get weather forecasts</p>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="flex items-center space-x-1 text-xs text-gray-600">
+                  <Cloud className="h-3 w-3 text-blue-500" />
+                  <span>Weather</span>
+                </div>
+                <div className="flex items-center space-x-1 text-xs text-gray-600">
+                  <MessageSquare className="h-3 w-3 text-green-500" />
+                  <span>Slack</span>
+                </div>
+                <div className="flex items-center space-x-1 text-xs text-gray-600">
+                  <Calendar className="h-3 w-3 text-purple-500" />
+                  <span>Calendar</span>
                 </div>
               </div>
-              <div className="flex items-center space-x-3">
-                <Calendar className="h-8 w-8 text-green-500" />
-                <div>
-                  <h3 className="font-medium">Slack Agent</h3>
-                  <p className="text-sm text-gray-600">Send team messages</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Calendar className="h-8 w-8 text-purple-500" />
-                <div>
-                  <h3 className="font-medium">Calendar Agent</h3>
-                  <p className="text-sm text-gray-600">Schedule events</p>
-                </div>
-              </div>
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                Nexus AI v3.0
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Calendar Integration */}
-        <CalendarIntegration />
-
-        {/* Chat Interface */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">
-              Chat with Your Assistant
-            </h2>
-          </div>
-
-          {/* Chat History */}
-          <div className="p-6 max-h-96 overflow-y-auto">
-            {chatHistory.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
-                <Bot className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>Start a conversation with your AI assistant!</p>
-                <p className="text-sm mt-2">
-                  Try: &quot;What&apos;s the weather in Tokyo?&quot;, &quot;Send
-                  a message to team&quot;, or &quot;Schedule meeting tomorrow at
-                  3pm&quot;
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {chatHistory.map((msg, index) => (
+        {/* Chat messages */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {chatHistory.length === 0 ? (
+            <div className="text-center text-gray-500 py-8">
+              <Bot className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <p>Start a conversation with your AI assistant!</p>
+              <p className="text-sm mt-2">
+                Try: &quot;What&apos;s the weather in Tokyo?&quot;, &quot;Send a
+                message to team&quot;, or &quot;Schedule meeting tomorrow at
+                3pm&quot;
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {chatHistory.map((msg, index) => (
+                <div
+                  key={index}
+                  className={`flex ${
+                    msg.role === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
                   <div
-                    key={index}
-                    className={`flex ${
-                      msg.role === "user" ? "justify-end" : "justify-start"
+                    className={`max-w-3xl px-4 py-2 rounded-lg ${
+                      msg.role === "user"
+                        ? "bg-blue-600 text-white"
+                        : "bg-white text-gray-900 shadow-sm border border-gray-200"
                     }`}
                   >
+                    <div className="whitespace-pre-wrap">{msg.content}</div>
                     <div
-                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                        msg.role === "user"
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-100 text-gray-900"
+                      className={`text-xs mt-2 ${
+                        msg.role === "user" ? "text-blue-100" : "text-gray-500"
                       }`}
                     >
-                      <p className="text-sm">{msg.content}</p>
-                      <p
-                        className={`text-xs mt-1 ${
-                          msg.role === "user"
-                            ? "text-blue-100"
-                            : "text-gray-500"
-                        }`}
-                      >
-                        {msg.timestamp.toLocaleTimeString()}
-                      </p>
+                      {msg.timestamp.toLocaleTimeString()}
                     </div>
                   </div>
-                ))}
-                {chatLoading && (
-                  <div className="flex justify-start">
-                    <div className="bg-gray-100 px-4 py-2 rounded-lg">
-                      <div className="flex items-center space-x-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-                        <span className="text-sm text-gray-600">
-                          Assistant is thinking...
-                        </span>
-                      </div>
-                    </div>
+                </div>
+              ))}
+
+              {chatLoading && (
+                <div className="text-left mb-4">
+                  <div className="inline-block bg-white text-gray-900 shadow-sm border border-gray-200 p-4 rounded-lg">
+                    <div className="animate-pulse">AI is thinking...</div>
                   </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Chat Input */}
-          <div className="px-6 py-4 border-t border-gray-200">
-            <form onSubmit={handleSendMessage} className="flex space-x-2">
-              <input
-                type="text"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
-                placeholder="Type your message... (e.g., 'What's the weather in NYC?', 'Send hello to team', or 'Schedule meeting tomorrow at 2pm')"
-                disabled={chatLoading}
-              />
-              <button
-                type="submit"
-                disabled={chatLoading || !message.trim()}
-                className="flex items-center space-x-1 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Send className="h-4 w-4" />
-                <span>{chatLoading ? "Sending..." : "Send"}</span>
-              </button>
-            </form>
-          </div>
-        </div>
-
-        {/* User Profile Section */}
-        <div className="mt-6 bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Your Profile</h3>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm font-medium text-gray-700">Username</p>
-                <p className="text-sm text-gray-900">{user.username}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-700">Email</p>
-                <p className="text-sm text-gray-900">{user.email}</p>
-              </div>
-              {user.first_name && (
-                <div>
-                  <p className="text-sm font-medium text-gray-700">
-                    First Name
-                  </p>
-                  <p className="text-sm text-gray-900">{user.first_name}</p>
                 </div>
               )}
-              {user.last_name && (
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Last Name</p>
-                  <p className="text-sm text-gray-900">{user.last_name}</p>
-                </div>
-              )}
-              <div>
-                <p className="text-sm font-medium text-gray-700">
-                  Member since
-                </p>
-                <p className="text-sm text-gray-900">
-                  {new Date(user.created_at).toLocaleDateString()}
-                </p>
-              </div>
             </div>
-          </div>
+          )}
         </div>
-      </main>
+
+        {/* Message input */}
+        <div className="bg-white border-t border-gray-200 p-6">
+          <form onSubmit={handleSendMessage} className="flex space-x-4">
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Type your message... (e.g., 'What's the weather in NYC?', 'Send hello to team', or 'Schedule meeting tomorrow at 2pm')"
+              className="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white placeholder-gray-500"
+              disabled={chatLoading}
+            />
+            <button
+              type="submit"
+              disabled={chatLoading || !message.trim()}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {chatLoading ? "Sending..." : "Send"}
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }
