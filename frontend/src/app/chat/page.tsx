@@ -1,19 +1,21 @@
 /**
- * Protected chat page
+ * Protected chat page with session management
  */
 
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { useSession } from "@/contexts/SessionContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { chatAPI } from "@/lib/api";
+import { chatAPI, sessionAPI } from "@/lib/api";
 import {
   LogOut,
   User,
   Bot,
   Calendar,
   Cloud,
+  Plus,
   MessageSquare,
   Trash2,
 } from "lucide-react";
@@ -29,6 +31,13 @@ interface ChatMessage {
 
 export default function ChatPage() {
   const { user, signout, loading } = useAuth();
+  const {
+    currentSession,
+    sessions,
+    createSession,
+    selectSession,
+    deleteSession,
+  } = useSession();
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
@@ -39,6 +48,32 @@ export default function ChatPage() {
       router.push("/auth/signin");
     }
   }, [user, loading, router]);
+
+  // Load session messages when current session changes
+  useEffect(() => {
+    if (currentSession) {
+      loadSessionMessages(currentSession.id);
+    } else {
+      setChatHistory([]);
+    }
+  }, [currentSession]);
+
+  const loadSessionMessages = async (sessionId: string) => {
+    try {
+      const messages = await sessionAPI.getSessionMessages(sessionId);
+      const formattedMessages: ChatMessage[] = messages.map(
+        (msg: { role: string; content: string; created_at: string }) => ({
+          role: msg.role as "user" | "assistant",
+          content: msg.content,
+          timestamp: new Date(msg.created_at),
+        })
+      );
+      setChatHistory(formattedMessages);
+    } catch (error) {
+      console.error("Failed to load session messages:", error);
+      toast.error("Failed to load conversation history");
+    }
+  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +91,17 @@ export default function ChatPage() {
 
     try {
       setChatLoading(true);
-      const result = await chatAPI.sendMessage(currentMessage);
+
+      // Use current session or create new one
+      let sessionId = currentSession?.id;
+      if (!sessionId) {
+        const newSession = await createSession(
+          `Chat ${currentMessage.slice(0, 30)}...`
+        );
+        sessionId = newSession?.id;
+      }
+
+      const result = await chatAPI.sendMessage(currentMessage, sessionId);
 
       const assistantMessage: ChatMessage = {
         role: "assistant",
@@ -78,9 +123,22 @@ export default function ChatPage() {
     router.push("/auth/signin");
   };
 
-  const handleClearChat = () => {
-    setChatHistory([]);
-    toast.success("Chat cleared");
+  const handleNewChat = async () => {
+    try {
+      await createSession();
+      toast.success("New chat session created");
+    } catch {
+      toast.error("Failed to create new chat");
+    }
+  };
+
+  const handleDeleteSession = async (sessionId: string) => {
+    try {
+      await deleteSession(sessionId);
+      toast.success("Session deleted successfully");
+    } catch {
+      toast.error("Failed to delete session");
+    }
   };
 
   if (loading) {
@@ -100,12 +158,12 @@ export default function ChatPage() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
+      {/* Session Sidebar */}
       <div className="w-80 bg-white border-r border-gray-200 flex flex-col max-h-screen">
-        {/* User info */}
+        {/* Session management UI */}
         <div className="p-4 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-medium text-gray-900">Nexus AI</h2>
+            <h2 className="text-lg font-medium text-gray-900">Chat Sessions</h2>
             <div className="flex items-center space-x-2">
               <User className="h-4 w-4 text-gray-400" />
               <span className="text-sm text-gray-600">
@@ -114,52 +172,71 @@ export default function ChatPage() {
             </div>
           </div>
           <button
-            onClick={handleClearChat}
+            onClick={handleNewChat}
             className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
           >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Clear Chat
+            <Plus className="h-4 w-4 mr-2" />
+            New Chat
           </button>
         </div>
 
-        {/* Available Agents */}
+        {/* Sessions list */}
         <div className="flex-1 overflow-y-auto min-h-0">
-          <div className="p-4">
-            <h3 className="text-sm font-medium text-gray-900 mb-3">
-              Available Agents
-            </h3>
-            <div className="space-y-2">
-              <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                <Cloud className="h-5 w-5 text-blue-500" />
-                <div>
-                  <div className="font-medium text-sm text-gray-900">
-                    Weather Agent
+          {sessions.map((session) => (
+            <div
+              key={session.id}
+              className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
+                currentSession?.id === session.id
+                  ? "bg-blue-50 border-l-4 border-l-blue-600"
+                  : ""
+              }`}
+            >
+              <div
+                className="flex items-center justify-between"
+                onClick={() => selectSession(session)}
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-gray-900 truncate">
+                    {session.title}
                   </div>
-                  <div className="text-xs text-gray-500">
-                    Get weather forecasts
+                  <div className="text-sm text-gray-500 truncate mt-1">
+                    {session.last_message_preview}
                   </div>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                <MessageSquare className="h-5 w-5 text-green-500" />
-                <div>
-                  <div className="font-medium text-sm text-gray-900">
-                    Slack Agent
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    Send team messages
+                  <div className="text-xs text-gray-400 mt-1">
+                    {session.message_count} messages
                   </div>
                 </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteSession(session.id);
+                  }}
+                  className="ml-2 p-1 text-gray-400 hover:text-red-600 transition-colors"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
-              <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
-                <Calendar className="h-5 w-5 text-purple-500" />
-                <div>
-                  <div className="font-medium text-sm text-gray-900">
-                    Calendar Agent
-                  </div>
-                  <div className="text-xs text-gray-500">Schedule events</div>
-                </div>
-              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Available Agents Section */}
+        <div className="p-4 border-t border-gray-200 flex-shrink-0">
+          <h3 className="text-sm font-medium text-gray-900 mb-3">
+            Available Agents
+          </h3>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="flex flex-col items-center p-2 bg-blue-50 rounded-lg">
+              <Cloud className="h-4 w-4 text-blue-500 mb-1" />
+              <span className="text-xs text-gray-600">Weather</span>
+            </div>
+            <div className="flex flex-col items-center p-2 bg-green-50 rounded-lg">
+              <MessageSquare className="h-4 w-4 text-green-500 mb-1" />
+              <span className="text-xs text-gray-600">Slack</span>
+            </div>
+            <div className="flex flex-col items-center p-2 bg-purple-50 rounded-lg">
+              <Calendar className="h-4 w-4 text-purple-500 mb-1" />
+              <span className="text-xs text-gray-600">Calendar</span>
             </div>
           </div>
         </div>
@@ -194,7 +271,7 @@ export default function ChatPage() {
             <div className="flex items-center space-x-3">
               <MessageSquare className="h-6 w-6 text-blue-600" />
               <h1 className="text-xl font-semibold text-gray-900">
-                AI Assistant Chat
+                {currentSession?.title || "Select a chat session"}
               </h1>
             </div>
             <div className="flex items-center space-x-4">
@@ -224,12 +301,18 @@ export default function ChatPage() {
           {chatHistory.length === 0 ? (
             <div className="text-center text-gray-500 py-8">
               <Bot className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p>Start a conversation with your AI assistant!</p>
-              <p className="text-sm mt-2">
-                Try: &quot;What&apos;s the weather in Tokyo?&quot;, &quot;Send a
-                message to team&quot;, or &quot;Schedule meeting tomorrow at
-                3pm&quot;
-              </p>
+              {currentSession ? (
+                <>
+                  <p>Start a conversation with your AI assistant!</p>
+                  <p className="text-sm mt-2">
+                    Try: &quot;What&apos;s the weather in Tokyo?&quot;,
+                    &quot;Send a message to team&quot;, or &quot;Schedule
+                    meeting tomorrow at 3pm&quot;
+                  </p>
+                </>
+              ) : (
+                <p>Select or create a chat session to start conversing!</p>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
@@ -277,13 +360,17 @@ export default function ChatPage() {
               type="text"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type your message... (e.g., 'What's the weather in NYC?', 'Send hello to team', or 'Schedule meeting tomorrow at 2pm')"
+              placeholder={
+                currentSession
+                  ? "Type your message... (e.g., 'What's the weather in NYC?', 'Send hello to team', or 'Schedule meeting tomorrow at 2pm')"
+                  : "Create or select a chat session first"
+              }
               className="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white placeholder-gray-500"
-              disabled={chatLoading}
+              disabled={chatLoading || !currentSession}
             />
             <button
               type="submit"
-              disabled={chatLoading || !message.trim()}
+              disabled={chatLoading || !message.trim() || !currentSession}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {chatLoading ? "Sending..." : "Send"}
