@@ -11,7 +11,6 @@ import { useEffect, useState } from "react";
 import { chatAPI, sessionAPI } from "@/lib/api";
 import {
   LogOut,
-  Send,
   User,
   Bot,
   Calendar,
@@ -22,6 +21,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { CalendarIntegration } from "@/components/calendar/CalendarIntegration";
+import UpcomingMeetings from "@/components/calendar/UpcomingMeetings";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -127,7 +127,7 @@ export default function ChatPage() {
     try {
       await createSession();
       toast.success("New chat session created");
-    } catch (error) {
+    } catch {
       toast.error("Failed to create new chat");
     }
   };
@@ -136,7 +136,7 @@ export default function ChatPage() {
     try {
       await deleteSession(sessionId);
       toast.success("Session deleted successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete session");
     }
   };
@@ -159,9 +159,9 @@ export default function ChatPage() {
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Session Sidebar */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+      <div className="w-80 bg-white border-r border-gray-200 flex flex-col max-h-screen">
         {/* Session management UI */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-medium text-gray-900">Chat Sessions</h2>
             <div className="flex items-center space-x-2">
@@ -181,7 +181,7 @@ export default function ChatPage() {
         </div>
 
         {/* Sessions list */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-0">
           {sessions.map((session) => (
             <div
               key={session.id}
@@ -220,13 +220,39 @@ export default function ChatPage() {
           ))}
         </div>
 
+        {/* Available Agents Section */}
+        <div className="p-4 border-t border-gray-200 flex-shrink-0">
+          <h3 className="text-sm font-medium text-gray-900 mb-3">
+            Available Agents
+          </h3>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="flex flex-col items-center p-2 bg-blue-50 rounded-lg">
+              <Cloud className="h-4 w-4 text-blue-500 mb-1" />
+              <span className="text-xs text-gray-600">Weather</span>
+            </div>
+            <div className="flex flex-col items-center p-2 bg-green-50 rounded-lg">
+              <MessageSquare className="h-4 w-4 text-green-500 mb-1" />
+              <span className="text-xs text-gray-600">Slack</span>
+            </div>
+            <div className="flex flex-col items-center p-2 bg-purple-50 rounded-lg">
+              <Calendar className="h-4 w-4 text-purple-500 mb-1" />
+              <span className="text-xs text-gray-600">Calendar</span>
+            </div>
+          </div>
+        </div>
+
         {/* Calendar Integration in Sidebar */}
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-gray-200 flex-shrink-0">
           <CalendarIntegration />
         </div>
 
+        {/* Upcoming Meetings Widget - Made more compact */}
+        <div className="p-4 border-t border-gray-200 flex-shrink-0 max-h-64 overflow-y-auto">
+          <UpcomingMeetings query="today" autoRefresh={true} />
+        </div>
+
         {/* Signout button */}
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-gray-200 flex-shrink-0">
           <button
             onClick={handleSignout}
             className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"

@@ -1,5 +1,5 @@
 """
-Google Calendar tools for event creation
+Google Calendar tools for event creation and upcoming meetings retrieval
 """
 
 from langchain_core.tools import tool
@@ -7,6 +7,23 @@ from src.services.google_calendar_service import google_calendar_service
 from src.database.calendar_operations import calendar_db
 import asyncio
 import logging
+
+# Import the upcoming meetings function using direct file loading
+import sys
+import os
+import importlib.util
+
+_upcoming_meetings_path = os.path.join(os.path.dirname(__file__), 'upcoming_meetings_tool.py')
+if os.path.exists(_upcoming_meetings_path):
+    spec = importlib.util.spec_from_file_location("upcoming_meetings_tool", _upcoming_meetings_path)
+    upcoming_meetings_module = importlib.util.module_from_spec(spec)
+    sys.modules['upcoming_meetings_tool'] = upcoming_meetings_module
+    spec.loader.exec_module(upcoming_meetings_module)
+    get_upcoming_meetings = upcoming_meetings_module.get_upcoming_meetings
+else:
+    # If file doesn't exist, create a dummy function
+    async def get_upcoming_meetings(query: str = "next 7 days", user_id: str = None) -> str:
+        return "❌ Upcoming meetings feature not available due to import error."
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +97,40 @@ def create_calendar_event(prompt: str, user_id: str) -> str:
         logger.error(error_msg)
         return error_msg
 
+@tool
+def get_upcoming_meetings_tool(query: str = "next 7 days", user_id: str = None) -> str:
+    """
+    Get upcoming meetings from Google Calendar.
+    
+    Args:
+        query: Natural language query describing the time range (e.g., "today", "this week", "next month")
+        user_id: ID of the user to fetch calendar for
+    
+    Returns:
+        Formatted string with upcoming meetings
+    """
+    logger.info(f"📅 Getting upcoming meetings for user {user_id}: {query}")
+    
+    # Validate user_id format
+    if not user_id or user_id in ["unknown", "user123", ""]:
+        return "❌ Invalid user session. Please ensure you're properly logged in to use calendar features."
+    
+    # Basic UUID format validation
+    import re
+    uuid_pattern = r'^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+    if not re.match(uuid_pattern, user_id, re.IGNORECASE):
+        logger.error(f"❌ Invalid UUID format for user_id: {user_id}")
+        return "❌ Invalid user ID format. Please log in again to use calendar features."
+
+    try:
+        # Use the async function from the upcoming_meetings_tool module
+        result = asyncio.run(get_upcoming_meetings(query, user_id))
+        return result
+    except Exception as e:
+        error_msg = f"❌ Failed to get upcoming meetings: {str(e)}"
+        logger.error(error_msg)
+        return error_msg
+
 def create_calendar_tools():
     """Create list of calendar tools"""
-    return [create_calendar_event] 
+    return [create_calendar_event, get_upcoming_meetings_tool] 

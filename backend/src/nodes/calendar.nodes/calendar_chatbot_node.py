@@ -6,33 +6,52 @@ from langchain_core.messages import SystemMessage, ToolMessage
 import sys
 import os
 
-# Import calendar tools for direct execution
-_calendar_tools_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'tools', 'calendar.tools')
-sys.path.insert(0, _calendar_tools_dir)
-try:
-    from calendar_tools import create_calendar_event
-finally:
-    sys.path.remove(_calendar_tools_dir)
+# Import calendar tools using direct file loading
+import importlib.util
+
+_calendar_tools_path = os.path.join(os.path.dirname(__file__), '..', '..', 'tools', 'calendar.tools', 'calendar_tools.py')
+if os.path.exists(_calendar_tools_path):
+    spec = importlib.util.spec_from_file_location("calendar_tools", _calendar_tools_path)
+    calendar_tools_module = importlib.util.module_from_spec(spec)
+    sys.modules['calendar_tools'] = calendar_tools_module
+    spec.loader.exec_module(calendar_tools_module)
+    
+    create_calendar_event = calendar_tools_module.create_calendar_event
+    get_upcoming_meetings_tool = calendar_tools_module.get_upcoming_meetings_tool
+else:
+    # Create dummy functions if file doesn't exist
+    def create_calendar_event(prompt: str, user_id: str) -> str:
+        return "❌ Calendar event creation not available due to import error."
+    
+    def get_upcoming_meetings_tool(query: str = "next 7 days", user_id: str = None) -> str:
+        return "❌ Upcoming meetings not available due to import error."
 
 def create_calendar_chatbot_node(llm_with_tools):
     """Create calendar chatbot node with direct tool execution capabilities"""
 
-    CALENDAR_PROMPT = """You are a helpful Google Calendar assistant that specializes in creating calendar events.
+    CALENDAR_PROMPT = """You are a helpful Google Calendar assistant that can help users manage their calendar events.
 
 🗓️ YOUR ROLE:
 - Help users create calendar events from natural language descriptions
+- Help users view their upcoming meetings and events
 - Parse event details like title, date, time, and duration from user input
-- Use the create_calendar_event tool to actually create events
-- Provide clear feedback about created events
+- Provide clear feedback about calendar operations
 
 🔧 AVAILABLE TOOLS:
 - create_calendar_event: Creates calendar events from natural language prompts
+- get_upcoming_meetings_tool: Retrieves upcoming meetings from user's Google Calendar
 
-🎯 EXAMPLES:
+🎯 EXAMPLES FOR CREATING EVENTS:
 - "Schedule meeting tomorrow at 2pm" → Extract: meeting, tomorrow, 2pm
 - "Plan dentist appointment next Friday 10am" → Extract: dentist appointment, next Friday, 10am
 - "Add team standup every Monday 9am" → Extract: team standup, Monday, 9am
 - "Book lunch with client Thursday 12:30pm" → Extract: lunch with client, Thursday, 12:30pm
+
+🎯 EXAMPLES FOR VIEWING MEETINGS:
+- "What are my meetings today?" → Use get_upcoming_meetings_tool with query "today"
+- "Show me this week's calendar" → Use get_upcoming_meetings_tool with query "this week"
+- "What do I have tomorrow?" → Use get_upcoming_meetings_tool with query "tomorrow"
+- "Any meetings next week?" → Use get_upcoming_meetings_tool with query "next week"
 
 📝 RESPONSE FORMAT:
 When creating events, always:
@@ -41,11 +60,17 @@ When creating events, always:
 3. Use the tool to create the event
 4. Confirm success or explain any issues
 
+When showing upcoming meetings:
+1. Acknowledge what time range they're asking about
+2. Use the get_upcoming_meetings_tool with appropriate query
+3. Present the results in a clear, formatted way
+
 Be conversational and helpful - users should feel like they're talking to a personal assistant!"""
 
     # Create a mapping of tool names to actual functions
     tool_map = {
-        'create_calendar_event': create_calendar_event
+        'create_calendar_event': create_calendar_event,
+        'get_upcoming_meetings_tool': get_upcoming_meetings_tool
     }
 
     def calendar_chatbot(state):

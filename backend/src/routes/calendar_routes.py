@@ -2,17 +2,21 @@
 Calendar OAuth2 and integration routes
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status, Query
 from fastapi.responses import RedirectResponse
 from src.routes.auth_routes import get_current_user
 from src.models.auth_models import UserResponse
 from src.services.google_calendar_service import google_calendar_service
 from src.database.calendar_operations import calendar_db
 from src.database.supabase_client import db_manager
+from pydantic import BaseModel
 import logging
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/calendar", tags=["calendar"])
+
+class UpcomingMeetingsRequest(BaseModel):
+    query: str = "next 7 days"
 
 @router.get("/connect")
 async def connect_google_calendar(current_user: UserResponse = Depends(get_current_user)):
@@ -93,6 +97,62 @@ async def calendar_status(current_user: UserResponse = Depends(get_current_user)
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to check calendar status"
         )
+
+@router.get("/upcoming")
+async def get_upcoming_meetings_endpoint(
+    query: str = Query("next 7 days", description="Time range query (e.g., 'today', 'this week', 'next month')"),
+    current_user: UserResponse = Depends(get_current_user)
+):
+    """Get upcoming meetings from user's Google Calendar"""
+    try:
+        # Import upcoming_meetings_tool using direct file loading
+        import importlib.util
+        import os
+        
+        upcoming_meetings_path = os.path.join(
+            os.path.dirname(__file__), '..', 'tools', 'calendar.tools', 'upcoming_meetings_tool.py'
+        )
+        if os.path.exists(upcoming_meetings_path):
+            spec = importlib.util.spec_from_file_location("upcoming_meetings_tool", upcoming_meetings_path)
+            upcoming_meetings_module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(upcoming_meetings_module)
+            upcoming_meetings_tool = upcoming_meetings_module.upcoming_meetings_tool
+        else:
+            raise Exception("Upcoming meetings tool not found")
+            
+        result = await upcoming_meetings_tool.get_upcoming_meetings(current_user.id, query)
+        return {"meetings": result, "query": query}
+    except Exception as e:
+        logger.error(f"Error fetching upcoming meetings: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch upcoming meetings: {str(e)}")
+
+@router.post("/upcoming")
+async def get_upcoming_meetings_post(
+    request: UpcomingMeetingsRequest,
+    current_user: UserResponse = Depends(get_current_user)
+):
+    """Get upcoming meetings with POST request (for complex queries)"""
+    try:
+        # Import upcoming_meetings_tool using direct file loading
+        import importlib.util
+        import os
+        
+        upcoming_meetings_path = os.path.join(
+            os.path.dirname(__file__), '..', 'tools', 'calendar.tools', 'upcoming_meetings_tool.py'
+        )
+        if os.path.exists(upcoming_meetings_path):
+            spec = importlib.util.spec_from_file_location("upcoming_meetings_tool", upcoming_meetings_path)
+            upcoming_meetings_module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(upcoming_meetings_module)
+            upcoming_meetings_tool = upcoming_meetings_module.upcoming_meetings_tool
+        else:
+            raise Exception("Upcoming meetings tool not found")
+            
+        result = await upcoming_meetings_tool.get_upcoming_meetings(current_user.id, request.query)
+        return {"meetings": result, "query": request.query}
+    except Exception as e:
+        logger.error(f"Error fetching upcoming meetings: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch upcoming meetings: {str(e)}")
 
 @router.delete("/disconnect")
 async def disconnect_calendar(current_user: UserResponse = Depends(get_current_user)):
